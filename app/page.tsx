@@ -5,32 +5,26 @@ import { FloatingThought } from "@/components/floating-thought"
 import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
 
-const thoughts = [
+interface ThoughtData {
+  时间: string
+  内容: string
+  标签: string
+}
+
+const fallbackThoughts = [
   "Art is not what you see, but what you make others see.",
   "Every artist was first an amateur.",
   "Creativity takes courage.",
   "The purpose of art is washing the dust of daily life off our souls.",
   "Art enables us to find ourselves and lose ourselves at the same time.",
-  "Imagination is more important than knowledge.",
-  "The earth without art is just 'eh'.",
-  "Art is the lie that enables us to realize the truth.",
-  "Color is my day-long obsession, joy and torment.",
-  "I dream of painting and then I paint my dream.",
-  "Art washes away from the soul the dust of everyday life.",
-  "Every child is an artist. The problem is staying an artist.",
-  "Art is freedom. Being able to bend things most people see as a straight line.",
-  "The artist sees what others only catch a glimpse of.",
-  "Art is the most intense mode of individualism.",
-  "Creativity is intelligence having fun.",
-  "Art is not a thing; it is a way.",
-  "The world always seems brighter when you've just made something.",
-  "Art speaks where words are unable to explain.",
-  "In every work of art, the artist himself is present.",
 ]
 
 const directions = ["up", "diagonal-left", "diagonal-right", "diagonal-up-left", "diagonal-up-right"] as const
 
 export default function FloatingThoughtsPage() {
+  const [thoughts, setThoughts] = useState<string[]>(fallbackThoughts)
+  const [isLoading, setIsLoading] = useState(true)
+
   const [activeThoughts, setActiveThoughts] = useState<
     Array<{
       id: number
@@ -41,6 +35,47 @@ export default function FloatingThoughtsPage() {
     }>
   >([])
   const [thoughtCounter, setThoughtCounter] = useState(0)
+
+  const fetchThoughtsFromCSV = async () => {
+    try {
+      const response = await fetch(
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/thoughts%20-%20thoughts-Ib9l5btrel0TdrWdndoe80izxa8MjM.csv",
+      )
+      const csvText = await response.text()
+
+      // Simple CSV parsing (assuming no commas in content)
+      const lines = csvText.split("\n")
+      const headers = lines[0].split(",")
+
+      const thoughtsData: string[] = []
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (line) {
+          const values = line.split(",")
+          if (values.length >= 2) {
+            // Extract content (内容) which should be the second column
+            const content = values[1]?.replace(/"/g, "").trim()
+            if (content) {
+              thoughtsData.push(content)
+            }
+          }
+        }
+      }
+
+      if (thoughtsData.length > 0) {
+        setThoughts(thoughtsData)
+        console.log(`[v0] Loaded ${thoughtsData.length} thoughts from CSV`)
+      } else {
+        console.log("[v0] No valid thoughts found in CSV, using fallback")
+        setThoughts(fallbackThoughts)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching CSV:", error)
+      setThoughts(fallbackThoughts)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const generateRandomPosition = () => {
     const x = 10 + Math.random() * 80 // 10-90% from left
@@ -53,6 +88,8 @@ export default function FloatingThoughtsPage() {
   }
 
   const addRandomThought = () => {
+    if (thoughts.length === 0) return
+
     const randomThought = thoughts[Math.floor(Math.random() * thoughts.length)]
     const randomDirection = directions[Math.floor(Math.random() * directions.length)]
     const position = generateRandomPosition()
@@ -86,18 +123,32 @@ export default function FloatingThoughtsPage() {
   }
 
   useEffect(() => {
-    // Initial thoughts
-    refreshThoughts()
-
-    const interval = setInterval(() => {
-      if (Math.random() > 0.2) {
-        // 80% chance to add a thought
-        addRandomThought()
-      }
-    }, 2000)
-
-    return () => clearInterval(interval)
+    fetchThoughtsFromCSV()
   }, [])
+
+  useEffect(() => {
+    if (!isLoading && thoughts.length > 0) {
+      // Initial thoughts
+      refreshThoughts()
+
+      const interval = setInterval(() => {
+        if (Math.random() > 0.2) {
+          // 80% chance to add a thought
+          addRandomThought()
+        }
+      }, 4000) // Increased interval from 2000ms to 4000ms for slower card appearance
+
+      return () => clearInterval(interval)
+    }
+  }, [isLoading, thoughts])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen relative overflow-hidden bg-black flex items-center justify-center">
+        <p className="text-white/60 text-lg">Loading thoughts...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-black">

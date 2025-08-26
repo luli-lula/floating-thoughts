@@ -77,8 +77,12 @@ export default function FloatingThoughtsPage() {
   }
 
   const generateRandomPosition = useCallback(() => {
-    const x = 10 + Math.random() * 80 // 10-90% from left
-    const y = 10 + Math.random() * 35 // 10-45% from top (avoiding bottom area completely)
+    // 调整位置生成逻辑：
+    // 1. 避免与顶部slogan重合（top: 25-55%）
+    // 2. 避免与底部思考者图片重合（bottom area - 完全避开底部40%区域）
+    // 3. 限制水平范围避免超出屏幕（left: 15-85%）
+    const x = 15 + Math.random() * 70 // 15-85% from left (避免超出屏幕)
+    const y = 25 + Math.random() * 20 // 25-45% from top (避免与slogan和底部图片重合)
 
     return {
       top: `${y}%`,
@@ -116,9 +120,9 @@ export default function FloatingThoughtsPage() {
   const refreshThoughts = useCallback(() => {
     setActiveThoughts([])
     
-    // Add initial thoughts with staggered delays
+    // 减少初始卡片数量，让它们更均匀分布
     setTimeout(() => {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 6; i++) {
         setTimeout(() => {
           if (thoughts.length > 0) {
             const newThought = createNewThought()
@@ -129,7 +133,7 @@ export default function FloatingThoughtsPage() {
               setActiveThoughts(prev => prev.filter(t => t.id !== newThought.id))
             }, 18000)
           }
-        }, i * 500)
+        }, i * 800) // 增加间隔时间
       }
     }, 500)
   }, [thoughts, createNewThought])
@@ -153,13 +157,13 @@ export default function FloatingThoughtsPage() {
       // Initial thoughts
       refreshThoughts()
 
-      // Add thoughts periodically
+      // 减少卡片生成频率，让它们更均匀
       const interval = setInterval(() => {
-        if (Math.random() > 0.2) {
-          // 80% chance to add a thought
+        if (Math.random() > 0.3) {
+          // 70% chance to add a thought
           addRandomThought()
         }
-      }, 4000)
+      }, 6000) // 增加间隔时间
 
       return () => clearInterval(interval)
     }
@@ -175,6 +179,7 @@ export default function FloatingThoughtsPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-black">
+      {/* Header with Slogan Only */}
       <header className="absolute top-8 left-1/2 transform -translate-x-1/2 z-30">
         <p className="text-white/80 text-center font-serif text-lg italic tracking-wide">
           "Thoughts drift like stars in the void of consciousness"
@@ -206,12 +211,13 @@ export default function FloatingThoughtsPage() {
         </div>
       ))}
 
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-        <div className="w-64 h-64 relative leading-10">
+      {/* Bottom Thinker Image - Moved to bottom center and made larger */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="w-80 h-80 relative leading-10">
           <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/thinker-SNQkIz93gx87LnXBdEPjUHnYCyyxxO.webp"
+            src="/thinker.webp"
             alt="The Thinker"
-            className="w-full h-full object-contain opacity-60"
+            className="w-full h-full object-contain opacity-40"
           />
         </div>
       </div>

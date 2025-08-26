@@ -37,13 +37,13 @@ export function FloatingThought({ text, delay, direction, className }: FloatingT
   const getDirectionStyles = () => {
     switch (direction) {
       case "diagonal-left":
-        return { "--float-x": "-120px", "--float-y": "-100px" }
+        return { "--float-x": "-60px", "--float-y": "-100px" }
       case "diagonal-right":
-        return { "--float-x": "120px", "--float-y": "-100px" }
+        return { "--float-x": "60px", "--float-y": "-100px" }
       case "diagonal-up-left":
-        return { "--float-x": "-80px", "--float-y": "-150px" }
+        return { "--float-x": "-40px", "--float-y": "-150px" }
       case "diagonal-up-right":
-        return { "--float-x": "80px", "--float-y": "-150px" }
+        return { "--float-x": "40px", "--float-y": "-150px" }
       default:
         return {}
     }

@@ -12,9 +12,17 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: "Floating Thoughts - A Poetic Journey",
-  description: "A minimalistic blog where thoughts float like dreams",
+  title: "Floating Thoughts - 思考者的诗意空间",
+  description: "一个极简的思考空间，让思想如梦境般漂浮",
   generator: "v0.app",
+  icons: {
+    icon: [
+      { url: '/thinker.webp', type: 'image/webp' },
+      { url: '/favicon.ico', type: 'image/x-icon' }
+    ],
+    shortcut: '/thinker.webp',
+    apple: '/thinker.webp',
+  },
 }
 
 export default function RootLayout({

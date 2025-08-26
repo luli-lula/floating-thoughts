@@ -163,12 +163,20 @@
   }
   85% {
     opacity: 1;
-    transform: translate(var(--float-x, 100px), var(--float-y, -100px)) scale(1) rotate(1deg);
+    /* 限制水平移动范围，避免超出屏幕 */
+    transform: translate(
+      clamp(var(--float-x, 100px), -80px, 80px), 
+      var(--float-y, -100px)
+    ) scale(1) rotate(1deg);
     filter: blur(0px);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--float-x, 150px), var(--float-y, -200px)) scale(0.9) rotate(-2deg);
+    /* 限制水平移动范围，避免超出屏幕 */
+    transform: translate(
+      clamp(var(--float-x, 150px), -100px, 100px), 
+      var(--float-y, -200px)
+    ) scale(0.9) rotate(-2deg);
     filter: blur(1px);
   }
 }

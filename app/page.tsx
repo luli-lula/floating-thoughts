@@ -35,41 +35,23 @@ export default function FloatingThoughtsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeThoughts, setActiveThoughts] = useState<Thought[]>([])
 
-  const fetchThoughtsFromCSV = async () => {
+  const fetchThoughtsFromJSON = async () => {
     try {
-      const response = await fetch(
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/thoughts%20-%20thoughts-Ib9l5btrel0TdrWdndoe80izxa8MjM.csv",
-      )
-      const csvText = await response.text()
+      const response = await fetch("/data/thoughts.json")
+      const thoughtsData = await response.json()
 
-      // Simple CSV parsing (assuming no commas in content)
-      const lines = csvText.split("\n")
-      const headers = lines[0].split(",")
+      // Extract content from JSON data
+      const thoughtsList: string[] = thoughtsData.map((thought: any) => thought.内容).filter(Boolean)
 
-      const thoughtsData: string[] = []
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim()
-        if (line) {
-          const values = line.split(",")
-          if (values.length >= 2) {
-            // Extract content (内容) which should be the second column
-            const content = values[1]?.replace(/"/g, "").trim()
-            if (content) {
-              thoughtsData.push(content)
-            }
-          }
-        }
-      }
-
-      if (thoughtsData.length > 0) {
-        setThoughts(thoughtsData)
-        console.log(`[v0] Loaded ${thoughtsData.length} thoughts from CSV`)
+      if (thoughtsList.length > 0) {
+        setThoughts(thoughtsList)
+        console.log(`[v1] Loaded ${thoughtsList.length} thoughts from JSON`)
       } else {
-        console.log("[v0] No valid thoughts found in CSV, using fallback")
+        console.log("[v1] No valid thoughts found in JSON, using fallback")
         setThoughts(fallbackThoughts)
       }
     } catch (error) {
-      console.error("[v0] Error fetching CSV:", error)
+      console.error("[v1] Error fetching JSON:", error)
       setThoughts(fallbackThoughts)
     } finally {
       setIsLoading(false)
@@ -149,7 +131,7 @@ export default function FloatingThoughtsPage() {
   }, [])
 
   useEffect(() => {
-    fetchThoughtsFromCSV()
+    fetchThoughtsFromJSON()
   }, [])
 
   useEffect(() => {

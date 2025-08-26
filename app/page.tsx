@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { FloatingThought } from "@/components/floating-thought"
 import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
@@ -9,6 +9,15 @@ interface ThoughtData {
   时间: string
   内容: string
   标签: string
+}
+
+interface Thought {
+  id: string
+  text: string
+  delay: number
+  direction: "up" | "diagonal-left" | "diagonal-right" | "diagonal-up-left" | "diagonal-up-right"
+  position: { top: string; left: string }
+  createdAt: number
 }
 
 const fallbackThoughts = [
@@ -24,17 +33,7 @@ const directions = ["up", "diagonal-left", "diagonal-right", "diagonal-up-left",
 export default function FloatingThoughtsPage() {
   const [thoughts, setThoughts] = useState<string[]>(fallbackThoughts)
   const [isLoading, setIsLoading] = useState(true)
-
-  const [activeThoughts, setActiveThoughts] = useState<
-    Array<{
-      id: number
-      text: string
-      delay: number
-      direction: (typeof directions)[number]
-      position: { top: string; left: string }
-    }>
-  >([])
-  const [thoughtCounter, setThoughtCounter] = useState(0)
+  const [activeThoughts, setActiveThoughts] = useState<Thought[]>([])
 
   const fetchThoughtsFromCSV = async () => {
     try {
@@ -77,7 +76,7 @@ export default function FloatingThoughtsPage() {
     }
   }
 
-  const generateRandomPosition = () => {
+  const generateRandomPosition = useCallback(() => {
     const x = 10 + Math.random() * 80 // 10-90% from left
     const y = 10 + Math.random() * 35 // 10-45% from top (avoiding bottom area completely)
 
@@ -85,42 +84,65 @@ export default function FloatingThoughtsPage() {
       top: `${y}%`,
       left: `${x}%`,
     }
-  }
+  }, [])
 
-  const addRandomThought = () => {
-    if (thoughts.length === 0) return
-
+  const createNewThought = useCallback((): Thought => {
     const randomThought = thoughts[Math.floor(Math.random() * thoughts.length)]
     const randomDirection = directions[Math.floor(Math.random() * directions.length)]
     const position = generateRandomPosition()
-
-    const newThought = {
-      id: thoughtCounter,
+    
+    return {
+      id: `thought-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       text: randomThought,
       delay: 0,
       direction: randomDirection,
       position,
+      createdAt: Date.now(),
     }
+  }, [thoughts, generateRandomPosition])
 
-    setActiveThoughts((prev) => [...prev, newThought])
-    setThoughtCounter((prev) => prev + 1)
+  const addRandomThought = useCallback(() => {
+    if (thoughts.length === 0) return
 
-    // Remove thought after animation completes
+    const newThought = createNewThought()
+    setActiveThoughts(prev => [...prev, newThought])
+
+    // Remove thought after animation completes (15-18 seconds)
     setTimeout(() => {
-      setActiveThoughts((prev) => prev.filter((t) => t.id !== newThought.id))
-    }, 10000)
-  }
+      setActiveThoughts(prev => prev.filter(t => t.id !== newThought.id))
+    }, 18000) // Slightly longer than the longest animation
+  }, [thoughts, createNewThought])
 
-  const refreshThoughts = () => {
+  const refreshThoughts = useCallback(() => {
     setActiveThoughts([])
-    setThoughtCounter(0)
-
+    
+    // Add initial thoughts with staggered delays
     setTimeout(() => {
       for (let i = 0; i < 8; i++) {
-        setTimeout(() => addRandomThought(), i * 500)
+        setTimeout(() => {
+          if (thoughts.length > 0) {
+            const newThought = createNewThought()
+            setActiveThoughts(prev => [...prev, newThought])
+            
+            // Remove thought after animation completes
+            setTimeout(() => {
+              setActiveThoughts(prev => prev.filter(t => t.id !== newThought.id))
+            }, 18000)
+          }
+        }, i * 500)
       }
     }, 500)
-  }
+  }, [thoughts, createNewThought])
+
+  // Clean up old thoughts periodically
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      setActiveThoughts(prev => prev.filter(thought => now - thought.createdAt < 20000))
+    }, 5000)
+
+    return () => clearInterval(cleanupInterval)
+  }, [])
 
   useEffect(() => {
     fetchThoughtsFromCSV()
@@ -131,16 +153,17 @@ export default function FloatingThoughtsPage() {
       // Initial thoughts
       refreshThoughts()
 
+      // Add thoughts periodically
       const interval = setInterval(() => {
         if (Math.random() > 0.2) {
           // 80% chance to add a thought
           addRandomThought()
         }
-      }, 4000) // Increased interval from 2000ms to 4000ms for slower card appearance
+      }, 4000)
 
       return () => clearInterval(interval)
     }
-  }, [isLoading, thoughts])
+  }, [isLoading, thoughts, refreshThoughts, addRandomThought])
 
   if (isLoading) {
     return (
